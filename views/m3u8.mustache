@@ -1,0 +1,12 @@
+#EXTM3U
+#EXT-X-MEDIA-SEQUENCE:{{sequence}}
+#EXT-X-TARGETDURATION:{{duration}}
+{{#display}}
+{{#gap}}
+#EXT-X-DISCONTINUITY
+{{/gap}}
+{{#filename}}
+#EXTINF:{{duration}},
+{{{filename}}}
+{{/filename}}
+{{/display}}

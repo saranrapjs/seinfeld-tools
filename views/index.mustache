@@ -1,0 +1,30 @@
+<html>
+<head>
+	<link href="/stylesheets/style.css" rel="stylesheet"/>
+	<script type="text/javascript">
+	window.onload = function() {
+		var iOS = ( navigator.userAgent.match(/(iPad|iPhone|iPod)/i) ? true : false );
+		if (iOS === true) {
+			document.body.className += " ios";
+			document.getElementById("play").onclick = function() {
+				var vid = document.querySelector("video");
+				vid.play();
+				vid.webkitEnterFullscreen();
+				document.body.className = "loaded";
+			}
+		} else {
+			setTimeout(function() {
+				document.body.className += " loaded";
+			},0);
+		}
+
+	}
+	</script>
+</head>
+<body>
+	<header><div id="play">&#9658;</div></header>
+	<video autoplay>
+		<source src="playlist.m3u8" type="application/vnd.apple.mpegurl">
+	</video>
+	</body>
+</html>
