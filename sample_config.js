@@ -11,7 +11,7 @@ config.timeWindow = 10;
 // }
 config.segment = function(inFile,outPrefix){
 	var ts = this.tmp+'out.ts';
-	var exec = 'ffmpeg -i ' + inFile + ' -y -vcodec copy -acodec copy -map 0 -map -0:s -vbsf h264_mp4toannexb '+ts;
+	var exec = 'ffmpeg -i "' + inFile + '" -y -vcodec copy -acodec copy -map 0 -map -0:s -vbsf h264_mp4toannexb '+ts;
 	exec += '; m3u8-segmenter -i '+ts+' -d '+this.duration+' -p '+outPrefix+' -m '+this.tmp+'output.m3u8 -u ""';
 	return exec;
 }

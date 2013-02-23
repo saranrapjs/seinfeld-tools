@@ -24,8 +24,9 @@ channel.prototype.listCount = 0;
 channel.prototype.files = [];
 channel.prototype.gatherVideo = function() {
 	var self = this;
-	glob("video/**/*.m4v",function(err,files) { 
+	glob(config.videos+"**/*.m4v",function(err,files) { 
 		if (err) return;
+		// console.log(files)
 		self.addVideo(files);
 	});
 }
