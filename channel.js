@@ -1,8 +1,8 @@
-var playlist = require('playlist'),
+var playlist = require('./playlist'),
 	events = require('events'),
 	exec = require('child_process').exec,
 	glob = require('glob'),
-	config = require('config'),
+	config = require('./config'),
 	util = require('util');
 
 var channel = function(callback) {

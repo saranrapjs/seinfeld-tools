@@ -1,4 +1,4 @@
-var config = require('config'),
+var config = require('./config'),
 	events = require('events'),
 	util = require('util'),
 	glob = require('glob'),
@@ -21,10 +21,12 @@ playlist.prototype.progress = function() {
 playlist.prototype.halfway = false;
 playlist.prototype.gatherTS = function() {
 	var self = this;
+	console.log('begin gather')
 	glob(this.tsPrefix()+"*.ts", null, function (err, matches) { // possibly stupid to go this way
 	    matches.forEach(function (match) {
 	    	self.list.push({filename:match});
 	    });
+	console.log('end gather')
 	    self.finish();
 	})
 }
@@ -49,10 +51,12 @@ playlist.prototype.cleanup = function() {
 playlist.prototype.convert = function(path) {
 	var command = config.segment(path,this.tsPrefix()),
 		self = this;
+	console.log('begin add')
 	exec(command,function(error, stdout, stderr) {
 		if (error) {
 			console.log('error'+error)
 		}
+		console.log('end add')
 		self.gatherTS();
 	})
 }

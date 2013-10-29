@@ -5,8 +5,8 @@
 
 var express = require('express'),
 	stache = require('stache'),
-  	routes = require('routes'),
-  	channel = require('channel');
+  	routes = require('./routes'),
+  	channel = require('./channel');
 
 var app = module.exports = express.createServer();
 
