@@ -12,11 +12,12 @@ var channel = function(callback) {
 	this.begun = false;
 	this.adding = false;
 	this.clean(callback)
-	// process.on('SIGINT',function() {
-	// 	logger.info("CLEANING UP...")
-	// 	self.clean();
-	// 	process.exit(1);
-	// })
+	process.on('SIGINT',function() {
+		logger.info("CLEANING UP...")
+		self.clean(function() {
+			process.exit(1);
+		});
+	});
 }
 util.inherits(channel, events.EventEmitter);
 channel.prototype.duration = config.duration;
