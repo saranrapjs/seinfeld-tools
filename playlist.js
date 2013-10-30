@@ -4,7 +4,7 @@ var config = require('./config'),
 	glob = require('glob'),
 	fs = require('fs'),
 	logger = require('./logger'),
-	exec = require('child_process').exec;
+	spawn = require('child_process').spawn;
 
 var playlist = function(srcPath) {
 	var self = this;
@@ -53,37 +53,59 @@ playlist.prototype.segment = function() {
 	return (this.converter === 'ffmpeg') ? this.ffmpeg() : this.avconv();
 }
 playlist.prototype.avconv = function() {
-	return util.format('avconv -i "%s" -vcodec copy -acodec copy -bsf h264_mp4toannexb "%sout.ts" | \
-		m3u8-segmenter -i - -d %s -p %s -m %soutput.m3u8 -u ""',
-	this.source,
-	config.tmp,
-	this.duration,
-	this.tsPrefix(),
-	config.tmp);
+	return [
+		'-i', this.source,
+		'-y',
+		'-vcodec', 'copy',
+		'-acodec', 'copy',
+		'-bsf', 'h264_mp4toannexb',
+		config.tmp+'out.ts'
+	]
 }
 playlist.prototype.ffmpeg = function() {
-	var ts = config.tmp+'out.ts';
-	return util.format('ffmpeg -i "%s" -y -vcodec copy -acodec copy -map 0 -map -0:s -vbsf h264_mp4toannexb %s; \
-		m3u8-segmenter -i %s -d %s -p %s -m "%soutput.m3u8" -u "";',
-	this.source,
-	ts,
-	ts,
-	this.duration,
-	this.tsPrefix(),
-	config.tmp);
+	return [
+		'-i', this.source,
+		'-y',
+		'-vcodec', 'copy',
+		'-acodec', 'copy',
+		'-map', '0',
+		'-map', '-0:s',
+		'-vbsf', 'h264_mp4toannexb',
+		config.tmp+'out.ts'
+	]
+}
+playlist.prototype.split = function() {
+	var self = this,
+		splitter = spawn('m3u8-segmenter', [
+			'-i', config.tmp+'out.ts',
+			'-d', this.duration,
+			'-p', this.tsPrefix(),
+			'-m', config.tmp + "output.m3u8",
+			'-u', '""'
+		]).on('exit', function() {
+			logger.info('finish m3u8 split')
+			self.gatherTS();
+		})
+	logger.info('begin m3u8 split')
 }
 playlist.prototype.convert = function() {
-	var command = this.segment(),
+	var args = (this.converter === 'ffmpeg') ? this.ffmpeg() : this.avconv(),
 		self = this;
 	logger.info('conversion started')
-	logger.info('running command: %s', command)
-	exec(command,function(error, stdout, stderr) {
-		if (error) {
-			logger.error('error: '+error)
+	// logger.info('running command: %s', command)
+	var conversion = spawn(this.converter, args);
+	conversion.stderr.on('data', function(data) {
+		// var time = data.toString().match(/time=[0-9:]+/g);
+		var text = data.toString(),
+			time = text.match(/time=[0-9:]+/g)
+		if (time && time.length) {
+			logger.info('conversion progress: ' + time[0])
 		}
-		logger.info('conversion finished')
-		self.gatherTS();
-	})
+    });
+	conversion.on('exit', function() {
+		logger.info("conversion finished")
+		self.split()
+	});
 	return this;
 }
 
