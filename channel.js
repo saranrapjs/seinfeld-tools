@@ -104,8 +104,8 @@ channel.prototype.add = function() {
 	var randomKey = this.random(),
 		self = this,
 		p = new playlist(this.files[randomKey]).convert();
-
-	logger.info('starting with '+p.id)
+	logger.info('file %s of %s videos', random+1, this.files.length)
+	logger.info('selecting '+p.src)
 
 	p.key = randomKey;
 	p.on('ready',function(ts_files) { // when ready, add to the list, and kickstart the channel if need be
