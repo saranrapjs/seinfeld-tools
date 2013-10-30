@@ -3,6 +3,7 @@ var config = require('./config'),
 	util = require('util'),
 	glob = require('glob'),
 	fs = require('fs'),
+	logger = require('./logger'),
 	exec = require('child_process').exec;
 
 var playlist = function(srcPath) {
@@ -10,7 +11,6 @@ var playlist = function(srcPath) {
 	this.list = [];
 	this.source = srcPath;
 	this.id = this.source.replace(/[^a-z0-9]/gi,'') + (new Date).getTime();
-	this.convert(this.source);
 }
 util.inherits(playlist, events.EventEmitter);
 
@@ -21,12 +21,12 @@ playlist.prototype.progress = function() {
 playlist.prototype.halfway = false;
 playlist.prototype.gatherTS = function() {
 	var self = this;
-	console.log('begin gather')
+	logger.info('gathering available ts files')
 	glob(this.tsPrefix()+"*.ts", null, function (err, matches) { // possibly stupid to go this way
 	    matches.forEach(function (match) {
 	    	self.list.push({filename:match});
 	    });
-	console.log('end gather')
+		logger.info('ts files gathered: '+self.list.length+' total')
 	    self.finish();
 	})
 }
@@ -48,17 +48,43 @@ playlist.prototype.cleanup = function() {
 		fs.unlink(val.filename);
 	})
 }
-playlist.prototype.convert = function(path) {
-	var command = config.segment(path,this.tsPrefix()),
+playlist.prototype.converter = config.converter || 'ffmpeg';
+playlist.prototype.segment = function() {
+	return (this.converter === 'ffmpeg') ? this.ffmpeg() : this.avconv();
+}
+playlist.prototype.avconv = function() {
+	return util.format('avconv -i "%s" -vcodec copy -acodec copy -bsf h264_mp4toannexb "%sout.ts" | \
+		m3u8-segmenter -i - -d %s -p %s -m %soutput.m3u8 -u ""',
+	this.source,
+	config.tmp,
+	this.duration,
+	this.tsPrefix(),
+	config.tmp);
+}
+playlist.prototype.ffmpeg = function() {
+	var ts = config.tmp+'out.ts';
+	return util.format('ffmpeg -i "%s" -y -vcodec copy -acodec copy -map 0 -map -0:s -vbsf h264_mp4toannexb %s; \
+		m3u8-segmenter -i %s -d %s -p %s -m "%soutput.m3u8" -u "";',
+	this.source,
+	ts,
+	ts,
+	this.duration,
+	this.tsPrefix(),
+	config.tmp);
+}
+playlist.prototype.convert = function() {
+	var command = this.segment(),
 		self = this;
-	console.log('begin add')
+	logger.info('conversion started')
+	logger.info('running command: %s', command)
 	exec(command,function(error, stdout, stderr) {
 		if (error) {
-			console.log('error'+error)
+			logger.error('error: '+error)
 		}
-		console.log('end add')
+		logger.info('conversion finished')
 		self.gatherTS();
 	})
+	return this;
 }
 
 module.exports = playlist;

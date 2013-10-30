@@ -6,6 +6,7 @@
 var express = require('express'),
 	stache = require('stache'),
   	routes = require('./routes'),
+	logger = require('./logger'),
   	channel = require('./channel');
 
 var app = module.exports = express.createServer();
@@ -40,6 +41,6 @@ channel.on('ready',function() {
 	app.get('/playlist.m3u8', function(req,res) { routes.m3u8(req,res,channel); });
 
 	app.listen(3000, function(){
-	  console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
+	  logger.info("server listening on port %d in %s mode", app.address().port, app.settings.env);
 	});
 })

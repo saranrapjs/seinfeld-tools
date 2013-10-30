@@ -3,7 +3,8 @@ var playlist = require('./playlist'),
 	exec = require('child_process').exec,
 	glob = require('glob'),
 	config = require('./config'),
-	util = require('util');
+	util = require('util'),
+	logger = require('./logger');
 
 var channel = function(callback) {
 	var self = this;
@@ -12,7 +13,7 @@ var channel = function(callback) {
 	this.adding = false;
 	this.clean(callback)
 	// process.on('SIGINT',function() {
-	// 	console.log("CLEANING UP...")
+	// 	logger.info("CLEANING UP...")
 	// 	self.clean();
 	// 	process.exit(1);
 	// })
@@ -26,7 +27,7 @@ channel.prototype.gatherVideo = function() {
 	var self = this;
 	glob(config.videos+"**/*.m4v",function(err,files) { 
 		if (err) return;
-		// console.log(files)
+		// logger.info(files)
 		self.addVideo(files);
 	});
 }
@@ -46,6 +47,9 @@ channel.prototype.currentPlaylist = function() {
 channel.prototype.lastPlaylist = function() {
 	return this.playlists[this.playlists.length-1];
 }
+channel.prototype.durationToMS = function() {
+	return this.duration * 1000;
+}
 channel.prototype.startPlaying = function( playlist ) {
 	var self = this;
 	if (this.begun !== true) {
@@ -53,7 +57,7 @@ channel.prototype.startPlaying = function( playlist ) {
 		this.emit('ready')
 		setInterval(function() { 
 			self.ping(); 
-		}, this.duration*1000);		
+		}, this.durationToMS());		
 	}
 }
 channel.prototype.ping = function() {
@@ -68,12 +72,12 @@ Per https://tools.ietf.org/html/draft-pantos-http-live-streaming-01#section-6.1.
 */
 		setTimeout(function() {
 			exec('rm -rf '+ latest.filename, function(err) {
-				if (err) console.log(err);
+				if (err) logger.info(err);
 			});			
-		},(this.duration*1000)*config.timeWindow); 
+		},(this.durationToMS())*config.timeWindow); 
 	}
 	if ( this.list.length < (config.timeWindow*2) && this.adding === false) {
-		console.log('[adding] list is: ' + this.list.length)
+		logger.info('list is now %s files long', this.list.length)
 		this.add();
 	}
 }
@@ -89,7 +93,7 @@ channel.prototype.moreTS = function(playlist) {
 			filename:ts.filename
 		})
 	})
-	console.log('[list] now '+this.list.length)
+	logger.info('list is now '+this.list.length+' segments long')
 }
 channel.prototype.display = function() {
 	return this.list.slice(0,config.timeWindow);
@@ -99,8 +103,10 @@ channel.prototype.add = function() {
 	this.adding = true;
 	var randomKey = this.random(),
 		self = this,
-		p = new playlist(this.files[randomKey]);
-	console.log('[adding] '+p.id)
+		p = new playlist(this.files[randomKey]).convert();
+
+	logger.info('starting with '+p.id)
+
 	p.key = randomKey;
 	p.on('ready',function(ts_files) { // when ready, add to the list, and kickstart the channel if need be
 		self.adding = false;
@@ -108,11 +114,12 @@ channel.prototype.add = function() {
 		self.startPlaying();
 	});
 	return p;
-}
+} 
 channel.prototype.clean = function(callback) {
 	var self = this;
+	logger.info('begin clean');
 	exec('rm -rf '+ config.ts_folder + "*",function() {
-		console.log('finished clean')
+		logger.info('finished clean')
 		callback.call(self)
 	})
 }
