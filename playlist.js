@@ -10,6 +10,7 @@ var playlist = function(srcPath) {
 	var self = this;
 	this.list = [];
 	this.source = srcPath;
+	this.filename = this.source.replace(/^.*[\\\/]/, '');
 	this.id = this.source.replace(/[^a-z0-9]/gi,'') + (new Date).getTime();
 }
 util.inherits(playlist, events.EventEmitter);
