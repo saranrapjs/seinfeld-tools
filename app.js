@@ -40,7 +40,8 @@ channel.on('ready',function() {
 
 	app.get('/playlist.m3u8', function(req,res) { routes.m3u8(req,res,channel); });
 
-	app.listen(3000, function(){
+	app.listen(channel.port(), function(){
 	  logger.info("server listening on port %d in %s mode", app.address().port, app.settings.env);
+	  channel.analog_video();
 	});
 })

@@ -4,3 +4,4 @@ tmp/
 scratch.sh
 node_modules/
 config.js
+sftp-config.json
