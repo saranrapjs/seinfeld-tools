@@ -9,6 +9,12 @@ var logger = new (winston.Logger)({
 		},
     	colorize:true, 
     	timestamp:true
+    }),
+    new (winston.transports.File)({ 
+    	filename: 'seinfeld-tools.log',
+    	json:false,
+    	maxsize:100,
+    	maxFiles:1
     })
   ]
 });

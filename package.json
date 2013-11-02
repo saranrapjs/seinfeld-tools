@@ -6,6 +6,7 @@
     "express": "2.5.10",
     "stache": "0.1.0",
     "glob": "*",
+    "daemonize2":"0.4.2",
     "winston": "0.7.2"
   }
 }

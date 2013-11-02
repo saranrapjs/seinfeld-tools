@@ -11,8 +11,8 @@ var channel = function(callback) {
 	this.list = [];
 	this.begun = false;
 	this.adding = false;
-	this.raspberrypi = (config.raspberrypi && config.raspberrypi === true);
 	this.clean(callback)
+	if (config.raspberrypi) this.raspberrypi = true;
 	process.on('SIGINT',function() {
 		logger.info("CLEANING UP...")
 		self.clean(function() {
@@ -20,11 +20,13 @@ var channel = function(callback) {
 		});
 	});
 }
+
 util.inherits(channel, events.EventEmitter);
 channel.prototype.port = function() {
 	return (config.port) ? config.port : 3000;
 }
-channel.prototype.duration = config.duration;
+channel.prototype.raspberrypi = false;
+channel.prototype.duration = config.duration | 10;
 channel.prototype.sequence = 0;
 channel.prototype.listCount = 0;
 channel.prototype.files = [];
@@ -130,7 +132,7 @@ channel.prototype.clean = function(callback) {
 }
 // this function plays thru the RCA video on raspberry pi's
 channel.prototype.analog_video = function() {
-	if (this.raspberrypi === false) return;
+	if (this.raspberrypi !== true) return;
 	logger.info('playing analog video')
 	exec('omxplayer http://localhost:'+this.port()+'/playlist.m3u8')
 }
