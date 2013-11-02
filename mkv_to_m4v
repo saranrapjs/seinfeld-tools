@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+# converts mkv files in a directory to m4v with a h.264 profile suitable for iOS devices
+
+# requires SublerCLI: 
+# you may need to build manually w/ XCode as the most recent binary version does not include the "vprofile"/"vlevel" flags
+
+if [[ -z "$1" ]]
+then
+	echo "Usage: mkv_to_m4v [path]"
+else
+	SRC_DIR=$(cd $1; pwd)
+	echo "converting mkv files in " $SRC_DIR
+
+	find "$SRC_DIR" -iname "*.mkv" | while read src; do 
+		target=${src%%.*}".m4v"
+		if [[ -f $target ]]; then
+			echo "already exists: $target";
+		else
+			echo "converting $src...";
+			/Applications/SublerCLI -source "$src" -dest "$target" -vprofile main -vlevel 31
+		fi
+	done
+fi
