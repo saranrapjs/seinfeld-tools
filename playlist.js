@@ -51,6 +51,14 @@ playlist.prototype.enqueueOne = function(cb) {
 		.once('play', function() {
 			self.enqueueOne();
 		})
+		.once('ready', function() {
+			for (var i = 0; i < this.segments.length; i++) {
+				self.segments.push({
+					owner : media_n,
+					segment : media.segments[i]
+				});
+			};			
+		})
 		.once('ended', function() {
 			self.playNext();
 		})
@@ -65,13 +73,7 @@ playlist.prototype.playNext = function(cb) {
 	media = this.media[media_n];
 	console.log("queue length of " + this.queue.length )
 	media.ready(function() {
-		for (var i = 0; i < media.segments.length; i++) {
-			self.segments.push({
-				owner : media_n,
-				segment : media.segments[i]
-			});
-			self.segments_until_next = media.segments.length;
-		};
+		self.segments_until_next = media.segments.length;
 		media.play();
 		if (self.begun === false) {
 			self.beginHeartbeat();
