@@ -1,3 +1,4 @@
+process.chdir(__dirname);
 var playlist = require('./playlist.js'),
 	express = require('express'),
 	mustacheExpress = require('mustache-express'),
