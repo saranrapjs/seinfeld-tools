@@ -3,7 +3,7 @@ var playlist = require('./playlist.js'),
 	mustacheExpress = require('mustache-express'),
 	app = express(),
 	has_raspberry_video_out = false,
-	port = 3000,
+	port = process.env.PORT || 3000,
 	exec = require('child_process').exec,
     glob = require('glob'),
 	p;
