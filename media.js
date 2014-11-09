@@ -3,6 +3,7 @@ var media,
 	glob = require('glob'),
 	util = require('util'),
 	async = require('async'),
+	exec = require('child_process').exec,
 	spawn = require('child_process').spawn,
 
 media = function(srcFile) {
@@ -20,7 +21,7 @@ media.prototype.end = function () {
 	console.log(this.src + " [ending]")
 	this.encoded = false;
 	setTimeout(function() {
-		console.log(this.src + " [deleting]")
+		console.log(self.src + " [deleting]")
 		exec('rm -rf ./tmp/'+ self.ts_prefix()+'*', function(err) {
 		});		
 	}, 20 * 1000)
