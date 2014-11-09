@@ -1,4 +1,4 @@
-var playlist = require('playlist.js'),
+var playlist = require('./playlist.js'),
 	express = require('express'),
 	mustacheExpress = require('mustache-express'),
 	app = express(),
@@ -7,7 +7,7 @@ var playlist = require('playlist.js'),
 
 p = new playlist();
 
-glob("video/*.m4v", {}, function (er, files) {
+glob("video/**/*.m4v", {}, function (er, files) {
 
 	// add m4v files
 	for (var i = 0; i < files.length; i++) {

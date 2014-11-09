@@ -16,11 +16,12 @@ media = function(srcFile) {
 util.inherits(media, events.EventEmitter);
 
 media.prototype.end = function () {
+	var self = this;
 	console.log(this.src + " [ending]")
 	this.encoded = false;
 	setTimeout(function() {
 		console.log(this.src + " [deleting]")
-		exec('rm -rf ./tmp/'+ this.ts_prefix()+'*', function(err) {
+		exec('rm -rf ./tmp/'+ self.ts_prefix()+'*', function(err) {
 		});		
 	}, 20 * 1000)
 	this.emit('ended')
