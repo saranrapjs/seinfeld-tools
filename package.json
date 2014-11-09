@@ -6,6 +6,7 @@
     "express": "*",
     "mustache-express":"*",
     "glob": "*",
-    "async":"*"
+    "async":"*",
+    "progress" : "*"
   }
 }

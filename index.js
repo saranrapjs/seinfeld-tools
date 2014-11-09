@@ -26,9 +26,8 @@ glob("video/**/*.m4v", {}, function (er, files) {
 	// start the playlist, which also kicks off encoding
 	p.start()
 		.on('started', function() {
-			console.log(app.port())
 			if (has_raspberry_video_out === true) {
-				console.log("sending video to video out")
+				console.log("sending video to video out [seinfeld-tools]")
 				exec('omxplayer http://localhost:'+port+'/playlist.m3u8')				
 			}
 		});

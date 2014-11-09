@@ -1,6 +1,7 @@
 var events = require('events'),
 	media = require('./media.js'),
 	fs = require('fs'),
+	exec = require('child_process').exec,
 	util = require('util'),
 	playlist;
 
@@ -71,7 +72,7 @@ playlist.prototype.playNext = function(cb) {
 	}
 	media_n = this.queue[0];
 	media = this.media[media_n];
-	console.log("queue length of " + this.queue.length )
+	console.log("queue length of " + this.queue.length + " [seinfeld-tools]")
 	media.ready(function() {
 		self.segments_until_next = media.segments.length;
 		media.play();
@@ -109,7 +110,7 @@ playlist.prototype.heartbeat = function() {
 }
 playlist.prototype.beginHeartbeat = function() {
 	var self = this;
-	console.log("beginning heartbeat")
+	console.log("beginning heartbeat [seinfeld-tools]")
 	this.emit('started')
 	this.begun = true;
 	setTimeout(function() {
@@ -118,9 +119,14 @@ playlist.prototype.beginHeartbeat = function() {
 	console.log('next ❤ in ' + this.segments[0].segment.duration + ' seconds')
 }
 playlist.prototype.start = function() {
+	var self = this;
 	if (this.media.length) {
-		this.enqueueOne();
-		this.playNext();
+		console.log("begin ts folder cleanup [seinfeld-tools]")
+		exec('rm -rf ./tmp/*', function() {
+			console.log("cleanup complete [seinfeld-tools]")
+			self.enqueueOne();
+			self.playNext();
+		});
 	}
 	return this;
 }
