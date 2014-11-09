@@ -5,7 +5,6 @@
   "dependencies": {
     "express": "*",
     "mustache-express":"*",
-    "stache": "0.1.0",
     "glob": "*",
     "async":"*"
   }

@@ -18,6 +18,11 @@ util.inherits(media, events.EventEmitter);
 media.prototype.end = function () {
 	console.log(this.src + " [ending]")
 	this.encoded = false;
+	setTimeout(function() {
+		console.log(this.src + " [deleting]")
+		exec('rm -rf ./tmp/'+ this.ts_prefix()+'*', function(err) {
+		});		
+	}, 20 * 1000)
 	this.emit('ended')
 }
 media.prototype.play = function() {
