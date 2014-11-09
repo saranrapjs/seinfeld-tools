@@ -3,10 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
-    "express": "2.5.10",
+    "express": "*",
+    "mustache-express":"*",
     "stache": "0.1.0",
     "glob": "*",
-    "daemonize2":"0.4.2",
-    "winston": "0.7.2"
+    "async":"*"
   }
 }

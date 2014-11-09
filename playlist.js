@@ -1,113 +1,124 @@
-var config = require('./config'),
-	events = require('events'),
-	util = require('util'),
-	glob = require('glob'),
+var events = require('events'),
+	media = require('./media.js'),
 	fs = require('fs'),
-	logger = require('./logger'),
-	spawn = require('child_process').spawn;
+	util = require('util'),
+	playlist;
 
-var playlist = function(srcPath) {
-	var self = this;
-	this.list = [];
-	this.source = srcPath;
-	this.filename = this.source.replace(/^.*[\\\/]/, '');
-	this.id = this.source.replace(/[^a-z0-9]/gi,'') + (new Date).getTime();
+playlist = function() {
+
+	this.temp_directory = './tmp';
+
+	this.sequence = 0;
+	this.segments_until_next = 0;
+	this.target_duration = 10;
+	this.window_length = 10;
+
+
+	this.media = [];
+	this.paths = {};
+
+	this.queue = [];
+	this.segments = [];
+
+	this.begun = false;
+
 }
 util.inherits(playlist, events.EventEmitter);
 
-playlist.prototype.duration = config.duration;
-playlist.prototype.progress = function() {
-	return ((this.sequenceStart - this.startingPosition) / this.endingPosition());
+playlist.prototype.addMedia = function(path) {
+	var m,
+		index;
+	if (typeof this.paths[path] === 'undefined') {
+		m = new media(path);
+		index = this.media.push(m)
+		m.index = this.paths[path] = index;
+	} else {
+		index = this.paths[path];
+	}
+	return this.media[index];
 }
-playlist.prototype.halfway = false;
-playlist.prototype.gatherTS = function() {
-	var self = this;
-	logger.info('gathering available ts files')
-	glob(this.tsPrefix()+"*.ts", null, function (err, matches) { // possibly stupid to go this way
-	    matches.forEach(function (match) {
-	    	self.list.push({filename:match});
-	    });
-		logger.info('ts files gathered: '+self.list.length+' total')
-	    self.finish();
-	})
+playlist.prototype.getRandomMedia = function() {
+	var random_N = Math.floor(Math.random()*this.media.length);
+	return (this.queue.indexOf(random_N) === -1) ? random_N : this.getRandomMedia();
 }
-playlist.prototype.finish = function() {
-	var self = this;
-	this.list.sort(function(a,b) { // account for the stupid single/double digit integer sort
-		var n1 = parseInt(a.filename.replace(self.tsPrefix()+'-','').replace('.ts','')),
-			n2 = parseInt(b.filename.replace(self.tsPrefix()+'-','').replace('.ts',''));
-		return n1-n2;
-	})
-	//this.list.splice(15)
-	this.emit('ready',this.list)
-}
-playlist.prototype.tsPrefix = function() {
-	return config.ts_folder+this.id;
-}
-playlist.prototype.cleanup = function() {
-	this.list.forEach(function(val) {
-		fs.unlink(val.filename);
-	})
-}
-playlist.prototype.converter = config.converter || 'ffmpeg';
-playlist.prototype.segment = function() {
-	return (this.converter === 'ffmpeg') ? this.ffmpeg() : this.avconv();
-}
-playlist.prototype.avconv = function() {
-	return [
-		'-i', this.source,
-		'-y',
-		'-vcodec', 'copy',
-		'-acodec', 'copy',
-		'-bsf', 'h264_mp4toannexb',
-		config.tmp+'out.ts'
-	]
-}
-playlist.prototype.ffmpeg = function() {
-	return [
-		'-i', this.source,
-		'-y',
-		'-vcodec', 'copy',
-		'-acodec', 'copy',
-		'-map', '0',
-		'-map', '-0:s',
-		'-vbsf', 'h264_mp4toannexb',
-		config.tmp+'out.ts'
-	]
-}
-playlist.prototype.split = function() {
+playlist.prototype.enqueueOne = function(cb) {
 	var self = this,
-		splitter = spawn('m3u8-segmenter', [
-			'-i', config.tmp+'out.ts',
-			'-d', this.duration,
-			'-p', this.tsPrefix(),
-			'-m', config.tmp + "output.m3u8",
-			'-u', '""'
-		]).on('exit', function() {
-			logger.info('finish m3u8 split')
-			self.gatherTS();
+		media_n = this.getRandomMedia(),
+		media = this.media[media_n];
+	if (this.queue.length > 3) return this;
+	this.queue.push(media_n);
+	return media
+		.once('play', function() {
+			self.enqueueOne();
 		})
-	logger.info('begin m3u8 split')
+		.once('ended', function() {
+			self.playNext();
+		})
+		.encode();
 }
-playlist.prototype.convert = function() {
-	var args = (this.converter === 'ffmpeg') ? this.ffmpeg() : this.avconv(),
-		self = this;
-	logger.info('conversion started')
-	// logger.info('running command: %s', command)
-	var conversion = spawn(this.converter, args);
-	conversion.stderr.on('data', function(data) {
-		// var time = data.toString().match(/time=[0-9:]+/g);
-		var text = data.toString(),
-			time = text.match(/time=[0-9:]+/g)
-		if (time && time.length) {
-			logger.info('conversion progress: ' + time[0])
+playlist.prototype.playNext = function(cb) {
+	var media_n, media, self = this;
+	if (this.begun === true) {
+		this.queue.shift();		
+	}
+	media_n = this.queue[0];
+	media = this.media[media_n];
+	console.log("queue length of " + this.queue.length )
+	media.ready(function() {
+		for (var i = 0; i < media.segments.length; i++) {
+			self.segments.push({
+				owner : media_n,
+				segment : media.segments[i]
+			});
+			self.segments_until_next = media.segments.length;
+		};
+		media.play();
+		if (self.begun === false) {
+			self.beginHeartbeat();
 		}
-    });
-	conversion.on('exit', function() {
-		logger.info("conversion finished")
-		self.split()
-	});
-	return this;
+		if (cb) cb.call(self);
+	})
+}
+playlist.prototype.formattedSegments = function() {
+	return this.segments.slice(0, this.window_length);
+}
+playlist.prototype.currentlyPlaying = function() {
+	return this.media[this.queue[0]];
+}
+playlist.prototype.heartbeat = function() {
+	var old_segment,
+		new_segment,
+		self = this;
+	if (this.segments.length >= 1) {
+		self.sequence++;
+		self.segments_until_next--;
+		old_segment = this.segments.shift();
+		new_segment = this.segments[0];
+		if (this.segments.length < 1 || old_segment.owner !== new_segment.owner) {
+			this.media[old_segment.owner].end();
+		}
+		if (new_segment) {
+			setTimeout(function() {
+				self.heartbeat();
+			}, new_segment.segment.duration * 1000)
+			console.log('next ❤ in ' + new_segment.segment.duration + ' seconds, '+this.segments_until_next+ ' remaining of current episode')
+		}
+	}
+}
+playlist.prototype.beginHeartbeat = function() {
+	var self = this;
+	console.log("beginning heartbeat")
+	this.begun = true;
+	setTimeout(function() {
+		self.heartbeat();		
+	}, this.segments[0].segment.duration * 1000);
+	console.log('next ❤ in ' + this.segments[0].segment.duration + ' seconds')
+}
+playlist.prototype.start = function() {
+	if (this.media.length) {
+		this.enqueueOne();
+		this.playNext();
+	}
 }
 
 module.exports = playlist;
