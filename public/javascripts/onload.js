@@ -15,6 +15,8 @@ window.onload = function() {
 				console.log("READY?")
 				v.play();		
 			});
+	} else {
+		vid.play();
 	}
 
 	if (iOS === true) { // work around lack of autoplay on mobile
