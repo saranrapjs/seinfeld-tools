@@ -110,6 +110,7 @@ playlist.prototype.heartbeat = function() {
 playlist.prototype.beginHeartbeat = function() {
 	var self = this;
 	console.log("beginning heartbeat")
+	this.emit('started')
 	this.begun = true;
 	setTimeout(function() {
 		self.heartbeat();		
@@ -121,6 +122,7 @@ playlist.prototype.start = function() {
 		this.enqueueOne();
 		this.playNext();
 	}
+	return this;
 }
 
 module.exports = playlist;

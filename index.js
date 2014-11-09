@@ -2,10 +2,19 @@ var playlist = require('./playlist.js'),
 	express = require('express'),
 	mustacheExpress = require('mustache-express'),
 	app = express(),
+	has_raspberry_video_out = false,
+	port = 3000,
+	exec = require('child_process').exec,
     glob = require('glob'),
 	p;
 
 p = new playlist();
+
+exec('which omxplayer', function(error, stdout, stderr) {
+	if (!error) {
+		has_raspberry_video_out = true;
+	}
+});
 
 glob("video/**/*.m4v", {}, function (er, files) {
 
@@ -15,7 +24,14 @@ glob("video/**/*.m4v", {}, function (er, files) {
 	};
 
 	// start the playlist, which also kicks off encoding
-	p.start();
+	p.start()
+		.on('started', function() {
+			console.log(app.port())
+			if (has_raspberry_video_out === true) {
+				console.log("sending video to video out")
+				exec('omxplayer http://localhost:'+port+'/playlist.m3u8')				
+			}
+		});
 
 });
 
@@ -35,5 +51,4 @@ app.get('/playlist.m3u8', function(req,res) {
 	res.render('m3u8', p);
 });
 app.use('/tmp', express.static(__dirname + '/tmp'));
-
-app.listen(3000);
+app.listen(port);
