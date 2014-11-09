@@ -10,14 +10,16 @@ a {
 
 header {
 	z-index: 1000;
-	width:100%;
 	position: fixed;
 	height:4em;
 	left:0;
 	top:0;
-	background: url('/images/logo.png');
+	background: url('/images/logo.svg');
 	background-repeat: no-repeat;
-	height:300px;
+	width:100px;
+	height:100px;
+	padding-left: 250px;
+	background-size: contain;
 	opacity: 1;
 	color:#888;
 	margin-left:10px;
@@ -25,7 +27,6 @@ header {
 	-webkit-transition: opacity 5s;
 	-o-transition: opacity 5s;
 	transition: opacity 5s;
-	padding-left:330px;
 }
 .loaded header {
 	opacity: .5;
@@ -36,6 +37,8 @@ header {
 	font-size: 100px;
 	cursor: pointer;
 	display: none;
+	height: 100%;
+	line-height: 109px;
 }
 .ios #play {
 	display: block;
